@@ -8,7 +8,10 @@ The image of the moon used is found at https://www.pexels.com/photo/photo-of-ful
 The phase of the moon is represented by the numbers [-1.0..1.0].
 The absolute value of the phase is the percent the moon is illuminated.
 The sign of the phase determines if it is waxing (negative) or waning (positive).
-A value of 0 is a new moon while 1 and -1 both are a full moon. 
+A value of 0.0 is a new moon while 1.0 and -1.0 both are a full moon.
+
+A full cycle starting with a new moon uses the values [0.0..-1.0] for the moon waxing until full.
+The values [1.0..0.0] shows a full moon waning util new.
 
 # Example
 
