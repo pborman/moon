@@ -1,4 +1,5 @@
-// Package moon produces images of the moon at different phases.
+// Package moon produces images of the moon at different phases and provides
+// information about the moon's location.
 //
 // The phase of the moon is represented by a floating point number between -1.0
 // and 1.0 where the absolute value is the percentage of the moon that is
@@ -25,8 +26,10 @@ import (
 	"image/png"
 	"math"
 	"sort"
+	"time"
 
 	"github.com/disintegration/imaging"
+	sampa "github.com/hablullah/go-sampa"
 	"github.com/llgcode/draw2d/draw2dimg"
 )
 
@@ -156,4 +159,47 @@ func StrokeMoonIcon(r draw.Image, light, shadow color.Color, phase float64) {
 	gc.SetStrokeColor(light)
 	DrawPhaseMask(gc, width, height, phase)
 	gc.Stroke()
+}
+
+// Information provides information about the moon.  The illumination is a value
+// between -1.0 and 1.0.  The amount of illumination is the absolute value
+// (e.g., -0.25 and 0.25 both indicate 25% illumination).  If Illumination is
+// negative then the moon is waxing.  If positive the moon is waning.  An
+// illumination of 0.0 is a new moon and either -1.0 or 1.0 is a full moon.
+type Information struct {
+	Moonrise     time.Time       // When the moon will/did rise
+	Moonset      time.Time       // When the moon will/did set
+	Direction    float64         // Direction to the moon
+	Elevation    float64         // Elevation of the moon
+	Illumination float64         // How illuminated the moon is
+	Phase        sampa.MoonPhase // The current phase
+}
+
+// Info returns information about the moon at a specified location and time.
+func Info(when time.Time, loc sampa.Location) (*Information, error) {
+	ev, err := sampa.GetMoonEvents(when, loc, nil)
+	if err != nil {
+		return nil, err
+	}
+	p, err := sampa.GetMoonPosition(when, loc, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	info := &Information{
+		Elevation:    p.TopocentricElevationAngle,
+		Direction:    p.ObserverLocalHourAngle + 180,
+		Moonrise:     ev.Moonrise.DateTime,
+		Moonset:      ev.Moonset.DateTime,
+		Illumination: p.PercentIlluminated,
+		Phase:        p.Phase,
+	}
+	if info.Direction >= 360 {
+		info.Direction -= 360
+	}
+	switch info.Phase {
+	case sampa.NewMoon, sampa.WaxingCrescent, sampa.FirstQuarter, sampa.WaxingGibbous:
+		info.Illumination = -info.Illumination
+	}
+	return info, nil
 }
